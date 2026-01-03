@@ -33,6 +33,10 @@ if TYPE_CHECKING:
     from deebot_client.event_bus import EventBus
     from deebot_client.events import EnableEvent
 
+#CUSTOM CODE START
+from deebot_client.events.quick_commands import QuickCommandsEvent
+#CUSTOM CODE END
+
 _LOGGER = get_logger(__name__)
 
 
@@ -95,6 +99,19 @@ class JsonCommandMqttP2P(JsonCommand, CommandMqttP2P, ABC):
     ) -> None:
         """Handle response received over the mqtt channel "p2p"."""
         response = orjson.loads(response_payload)
+
+        # CUSTOM CODE START
+        # Emit event for qetQuickCommand
+        if getattr(self, "NAME", None) == "getQuickCommand":
+            try:
+                commands = response["body"]["data"][0]["array"]
+            except (KeyError, IndexError, TypeError):
+                commands = None
+
+            if commands:
+                event_bus.notify(QuickCommandsEvent(commands))
+        # CUSTOM CODE END
+
         self._handle_mqtt_p2p(event_bus, response)
 
     @abstractmethod
